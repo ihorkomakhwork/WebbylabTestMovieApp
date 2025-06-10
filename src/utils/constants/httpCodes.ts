@@ -8,4 +8,4 @@ export const HTTP_CODES = {
   INTERNAL_SERVER_ERROR: 500,
 } as const;
 
-export type HttpCodes = typeof HTTP_CODES[keyof typeof HTTP_CODES];
+export type THttpCodes = typeof HTTP_CODES[keyof typeof HTTP_CODES];

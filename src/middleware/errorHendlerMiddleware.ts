@@ -1,22 +1,24 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { logger } from '../utils/logger';
-import { AppError } from '../errors/appError';
-import { HTTP_CODES } from '../utils/constants/httpCodes';
+import { ApiError } from '../errors/apiError';
+import { ERROR_CODES } from '../utils/constants/errorCodes';
+import { API_STATUSES } from '../utils/constants/apiStatuses';
 
 export const errorHandlerMiddleware = (
   err: Error,
   req: Request,
   res: Response,
+  next: NextFunction,
 ): void => {
-  if (err instanceof AppError) {
-    const { statusCode, message, stack } = err;
-    const errorMessage = message;
-    const { method, url } = req;
-
-    logger.error({ statusCode, errorMessage, method, url, stack });
-
-    res.status(statusCode).json({ message });
+  const { message: errorMessage, stack } = err;
+  const { method, url } = req;
+  
+  logger.error({ errorMessage, method, url, stack });
+  
+  if (err instanceof ApiError) {
+    const { code, fields } = err;
+    res.json({ status: API_STATUSES.ERROR, error : { fields, code }});
   } else {
-    res.status(HTTP_CODES.INTERNAL_SERVER_ERROR).json({ message: 'Internal server error' });
+    res.json({ error:{ code: ERROR_CODES.INTERNAL_SERVER_ERROR }, status: API_STATUSES.ERROR });
   }
 };
