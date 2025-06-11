@@ -7,6 +7,6 @@ import { ActorMovie } from '../models/actorMovieModel';
 import { logger } from './logger';
 
 export const db = new Sequelize(process.env.DB_URL || 'sqlite::memory:', {
-  models: [ User, Movie, Actor, ActorMovie ],
-  logging: logger.debug.bind(logger),
+    models: [User, Movie, Actor, ActorMovie],
+    logging: logger.debug.bind(logger),
 });
