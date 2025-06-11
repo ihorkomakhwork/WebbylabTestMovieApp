@@ -5,7 +5,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node --env-file=.env.dev ./dist/main.js",
-    "start:dev": "tsx watch --env-file=.env.dev ./src/main.ts",
+    "start:dev": "tsx --env-file=.env.dev ./src/main.ts",
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "jest --coverage"

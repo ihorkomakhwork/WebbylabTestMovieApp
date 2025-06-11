@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { Movie } from '../models/movieModel';
-import { Includeable, Op, ReplicationOptions, WhereOptions } from 'sequelize';
+import { Includeable, Op, WhereOptions } from 'sequelize';
 import { db } from '../utils/db';
 import { Actor } from '../models/actorModel';
 import { ApiError } from '../errors/apiError';
