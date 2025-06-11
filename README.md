@@ -6,7 +6,7 @@ docker run -p 8000:8050 -e APP_PORT=8050  komigor/movies
 ```
 
 ## Architecture explanation
-This project follows a layered architecture, common in Node.js applications, to ensure separation of concerns, maintainability, and scalability. The key components and their responsibilities are:
+. The key project components and their responsibilities are:
 
 -   **Controllers (`src/controllers`)**: Handle incoming HTTP requests, process input, interact with services, and send back HTTP responses. They act as the entry point for API requests. Now It'also contain the business logic of the application.
 - - Main is `src/controllers/movies.ts` thats worsks wirh movie entity CRUD operations, import by file. etc
