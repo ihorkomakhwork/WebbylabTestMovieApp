@@ -1,13 +1,15 @@
 import { Request, Response } from 'express';
 import { Movie } from '../models/movieModel';
-import { Includeable, Op, WhereOptions } from 'sequelize';
+import { Includeable, Op, fn, WhereOptions, col, Order } from 'sequelize';
 import { db } from '../utils/db';
 import { Actor } from '../models/actorModel';
 import { ApiError } from '../errors/apiError';
 import { ERROR_CODES } from '../utils/constants/errorCodes';
 import { API_STATUSES } from '../utils/constants/apiStatuses';
+import { CreateMovieDto, createMoviesDto, CreateMoviesDto, MovieQueryDto } from '../schemas/movieSchemas';
+import { validate } from '../utils/ajv';
 
-const parseMovieFile = (moviesFile: Express.Multer.File) => {
+const parseMovieFile = (moviesFile: Express.Multer.File): CreateMoviesDto  => {
     const content = moviesFile.buffer.toString('utf8');
 
     const blocks = content.trim().split(/\n\s*\n/);
@@ -23,18 +25,21 @@ const parseMovieFile = (moviesFile: Express.Multer.File) => {
         const [, title, yearStr, format, stars] = match;
 
         return {
-            title: title.trim(),
-            year: parseInt(yearStr.trim(), 10),
-            format: format.trim(),
-            actors: stars.split(',').map((actor: string) => actor.trim()),
+            title: title.trim() as string,
+            year: parseInt(yearStr.trim(), 10) as number,
+            format: format.trim() as 'VHS' | 'DVD' | 'Blu-Ray',
+            actors: stars.split(',').map((actor: string) => actor.trim()) as string[],
         };
     });
     return movies;
 };
 
+const validateFileOutput = (movies: CreateMoviesDto) => 
+    validate(movies, createMoviesDto);
+
 export const moviesController = {
-    create: async (req: Request, res: Response) => {
-        const { title, year, format, actors } = req.body;
+    create: async (req: Request, res: Response): Promise<void> => {
+        const { title, year, format, actors } = req.body as CreateMovieDto;
 
         const existingMovie = await Movie.findOne({ where: { title, year } });
         if (existingMovie)
@@ -75,7 +80,7 @@ export const moviesController = {
         res.json({ data, status: API_STATUSES.OK });
     },
 
-    delete: async (req: Request, res: Response) => {
+    delete: async (req: Request, res: Response): Promise<void> => {
         const { id } = req.params;
         const movie = await Movie.findByPk(id);
 
@@ -88,7 +93,7 @@ export const moviesController = {
         res.json({ status: API_STATUSES.OK });
     },
 
-    patch: async (req: Request, res: Response) => {
+    patch: async (req: Request, res: Response): Promise<void> => {
         const { id } = req.params;
         const { title, year, format, actors } = req.body;
 
@@ -103,7 +108,10 @@ export const moviesController = {
             movie.title = title;
             movie.year = year;
             movie.format = format;
-            await movie.save({ transaction: t });
+            await Movie.update(
+                { title, year, format },
+                { where: { id }, transaction: t}
+            );
 
             const actorInstances: Actor[] = [];
             for await (const actorName of actors) {
@@ -121,12 +129,13 @@ export const moviesController = {
                     model: Actor,
                     through: { attributes: [] },
                 },
+                transaction: t,
             });
         });
         res.json({ data, status: API_STATUSES.OK });
     },
 
-    getById: async (req: Request, res: Response) => {
+    getById: async (req: Request, res: Response): Promise<void> => {
         const { id } = req.params;
         const movie = await Movie.findByPk(id, {
             include: {
@@ -134,11 +143,11 @@ export const moviesController = {
                 through: { attributes: [] },
             },
         });
-        if (!movie)
+        if (!movie){
             throw new ApiError(`MOVIE_${ERROR_CODES.NOT_FOUND}`, {
                 id: Number(id),
             });
-
+        }
         res.json({ data: movie, status: API_STATUSES.OK });
     },
 
@@ -151,12 +160,12 @@ export const moviesController = {
             order = 'ASC',
             limit = '20',
             offset = '0',
-        } = req.query;
+        } = req.query as MovieQueryDto;
 
         let where: WhereOptions = {};
         let replacmentsObj: object = {};
         const include: Includeable[] = [];
-
+        let orderObj: Order; 
         if (search) {
 
             include.push({
@@ -189,12 +198,18 @@ export const moviesController = {
                 });
             }
         }
+        if (sort === 'title') {
+            orderObj = [[fn('LOWER', col(sort as string)), order as string]];
+        } else {
+            orderObj = [[sort as string, order as string]];
+        }
+        
 
         const movies = await Movie.findAndCountAll({
             where,
             ...replacmentsObj,
             include,
-            order: [[sort as string, order as string]],
+            order: orderObj,
             limit: parseInt(limit as string, 10),
             offset: parseInt(offset as string, 10),
         });
@@ -210,8 +225,10 @@ export const moviesController = {
         });
 
         const movies = parseMovieFile(req.file as Express.Multer.File);
-
+        validateFileOutput(movies);
+        
         const createdMovies: Movie[] = [];
+        
         let totalMoviesCount;
         try {
             await db.transaction(async (t) => {

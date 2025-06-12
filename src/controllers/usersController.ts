@@ -5,6 +5,7 @@ import { generateToken } from '../utils/crypto';
 import { ApiError } from '../errors/apiError';
 import { ERROR_CODES } from '../utils/constants/errorCodes';
 import { API_STATUSES } from '../utils/constants/apiStatuses';
+import { CRYPTO } from '../utils/constants/crypto';
 
 export const usersController = {
     create: async (req: Request, res: Response): Promise<void> => {
@@ -19,7 +20,7 @@ export const usersController = {
                 confirmPassword: ERROR_CODES.NOT_EQUAL,
                 password: ERROR_CODES.NOT_EQUAL,
             });
-        const hashPassword = await bcrypt.hash(password, 5);
+        const hashPassword = await bcrypt.hash(password, CRYPTO.ROUNDS);
         const user = await User.create({
             email,
             name,
