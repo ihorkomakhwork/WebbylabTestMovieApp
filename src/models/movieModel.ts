@@ -4,17 +4,27 @@ import {
     Column,
     DataType,
     BelongsToMany,
+    BeforeSave,
 } from 'sequelize-typescript';
 import { Actor } from './actorModel';
 import { ActorMovie } from './actorMovieModel';
 
-@Table({ tableName: 'Movie' })
+@Table({ 
+  tableName: 'Movie',
+  defaultScope: {
+    attributes: { exclude: ['normalizedTitle'] }
+  }, 
+
+})
 export class Movie extends Model {
     @Column({
         type: DataType.STRING,
         allowNull: false,
     })
     title: string;
+
+    @Column({ type: DataType.STRING})
+    normalizedTitle: string;
 
     @Column({
         type: DataType.INTEGER,
@@ -28,6 +38,13 @@ export class Movie extends Model {
     })
     format: 'VHS' | 'DVD' | 'Blu-Ray';
 
+    @BeforeSave
+    static saveNormalizedTitle(instance: Movie) {
+      instance.dataValues.normalizedTitle = 
+        instance.dataValues.title.toLowerCase();
+    }
+
     @BelongsToMany(() => Actor, () => ActorMovie)
     actors: Actor[];
+
 }

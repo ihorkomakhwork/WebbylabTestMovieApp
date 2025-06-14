@@ -15,4 +15,5 @@ exports.db = new sequelize_typescript_1.Sequelize(node_process_1.default.env.DB_
     models: [userModel_1.User, movieModel_1.Movie, actorModel_1.Actor, actorMovieModel_1.ActorMovie],
     logging: logger_1.logger.debug.bind(logger_1.logger),
 });
+(0, movieModel_1.movieHooks)();
 //# sourceMappingURL=db.js.map

@@ -199,7 +199,7 @@ export const moviesController = {
             }
         }
         if (sort === 'title') {
-            orderObj = [[fn('LOWER', col(sort as string)), order as string]];
+            orderObj = [[fn('LOWER', col('normalizedTitle' as string)), order as string]];
         } else {
             orderObj = [[sort as string, order as string]];
         }
